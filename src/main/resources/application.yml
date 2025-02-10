@@ -1,0 +1,35 @@
+# Server Details
+server:
+  port: ${PORT:0}
+
+# Eureka Details
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://admin:admin@localhost:8761/eureka/
+
+# Application Details
+spring:
+  application:
+    name: order-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/order-service
+    username: root
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+# Management Tools Details
+management:
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
