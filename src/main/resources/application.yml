@@ -1,6 +1,6 @@
 # Server Details
 server:
-  port: ${PORT:8081}
+  port: ${PORT:8082}
 
 # Eureka Details
 eureka:
@@ -23,8 +23,8 @@ spring:
 
 # External Api Calling
 external:
-  inventory-service: http://inventory-service/api/inventory
-
+  inventory-service: http://localhost:8081/api/inventory #http://inventory-service/api/inventory
+  
 # Management Tools Details
 management:
   health:
@@ -43,15 +43,6 @@ management:
   endpoint:
     health:
       show-details: always
-
-# Swagger
-springdoc:
-  api-docs:
-    enabled: true
-    path: /order/v3/api-docs
-  swagger-ui:
-    enabled: true
-    path: /order/swagger-ui.html
 
 # Resilience4J
 resilience4j.circuitbreaker:

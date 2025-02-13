@@ -2,11 +2,9 @@ package com.dreamlayer.api.service.impl;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,29 +12,27 @@ import com.dreamlayer.api.dto.CommonResponse;
 import com.dreamlayer.api.dto.InventoryResponse;
 import com.dreamlayer.api.dto.OrderLineItemsDto;
 import com.dreamlayer.api.dto.OrderRequest;
-import com.dreamlayer.api.manage.OrderManage;
+import com.dreamlayer.api.manage.IOrderManage;
 import com.dreamlayer.api.modal.Order;
 import com.dreamlayer.api.modal.OrderLineItems;
-import com.dreamlayer.api.repository.OrderRepository;
+import com.dreamlayer.api.service.IMethodUtils;
 import com.dreamlayer.api.service.IOrderService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class OrderService implements IOrderService{
 	
-	private final MessageSource messageSource;
+	@Autowired
+	private IOrderManage iOrderManage;
 	
-	private final OrderRepository orderRepository;
-	private final OrderManage orderManage;
+	@Autowired
+	private IMethodUtils methodUtils;
 	
 	public CommonResponse placeOrder(OrderRequest orderRequest) {
 		
-		Locale locale = LocaleContextHolder.getLocale();
 		CommonResponse commonResponse = new CommonResponse();
 		Order order = new Order();
 		order.setOrderNumber(UUID.randomUUID().toString());
@@ -51,30 +47,31 @@ public class OrderService implements IOrderService{
 				.toList();
 
 		// Call Inventory Service, and place order if product is in stock
-		InventoryResponse[] result = orderManage.placeOrder(skuCodes);
-		if(result.length > 0) {
+		List<InventoryResponse> result = iOrderManage.placeOrder(skuCodes);
+		if(result.size() > 0) {
 			
-			boolean allProductsInStock = Arrays.stream(result).allMatch(InventoryResponse::isInStock);
+			InventoryResponse[] content = (InventoryResponse[]) result.toArray();
+			boolean allProductsInStock = Arrays.stream(content).allMatch(InventoryResponse::isInStock);
 			if(allProductsInStock) {
 				
-				orderRepository.save(order);
+				iOrderManage.saveOrderData(order);
 				commonResponse.setStatus_code(00);
 				commonResponse.setStatus("Success");
 				commonResponse.setTitle("Place Order");
-				commonResponse.setMessage(getLocalizedMessage("successOrder"));
+				commonResponse.setMessage(methodUtils.getLocalizedMessage("successOrder"));
 			}
 			else {
 				commonResponse.setStatus_code(01);
 				commonResponse.setStatus("Failure");
 				commonResponse.setTitle("Place Order");
-				commonResponse.setMessage(getLocalizedMessage("inValidStock"));
+				commonResponse.setMessage(methodUtils.getLocalizedMessage("inValidStock"));
 			}
 		}
 		else {
 			commonResponse.setStatus_code(01);
 			commonResponse.setStatus("Failure");
 			commonResponse.setTitle("Place Order");
-			commonResponse.setMessage(getLocalizedMessage("circuitOrder"));
+			commonResponse.setMessage(methodUtils.getLocalizedMessage("circuitOrder"));
 		}
 		return commonResponse;
 	}
@@ -86,12 +83,5 @@ public class OrderService implements IOrderService{
 		orderLineitems.setQuantity(orderLineItemsDto.getQuantity());
 		orderLineitems.setSkuCode(orderLineItemsDto.getSkuCode());
 		return orderLineitems;
-	}
-	
-	private String getLocalizedMessage(String translationKey) {
-		
-		Locale locale = LocaleContextHolder.getLocale();
-		log.info("lang :: " + locale);
-		return messageSource.getMessage(translationKey, null, locale);
 	}
 }
